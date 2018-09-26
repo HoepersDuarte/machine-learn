@@ -4,15 +4,23 @@ import pandas as pd
 from collections import Counter
 import numpy as np
 from sklearn.model_selection import cross_val_score
+import nltk
+#nltk.download('stopwords')
+#nltk.download('rslp')
+nltk.download('punkt')
 
-
-classificacoes = pd.read_csv('emails.csv')
+classificacoes = pd.read_csv('emails.csv', encoding = 'utf-8')
 textosPuros = classificacoes['email']
-textosQuebrados = textosPuros.str.lower().str.split(' ')
+frases = textosPuros.str.lower()
+textosQuebrados = [nltk.tokenize.word_tokenize(frase) for frase in frases]
 dicionario = set()
 
+stopwords = nltk.corpus.stopwords.words('portuguese')
+stemmer = nltk.stem.RSLPStemmer()
+
 for lista in textosQuebrados:
-    dicionario.update(lista)
+    validas = [stemmer.stem(palavra) for palavra in lista if palavra not in stopwords and len(palavra) > 2]
+    dicionario.update(validas)
 
 totalDePalavras = len(dicionario)
 tuplas = zip(dicionario, range(totalDePalavras))
@@ -23,8 +31,8 @@ def vetorizar_texto(texto, tradutor):
     vetor = [0] * len(tradutor)
 
     for palavra in texto:
-        if palavra in tradutor:
-            posicao = tradutor[palavra]
+        if len(palavra) > 0 and stemmer.stem(palavra) in tradutor:
+            posicao = tradutor[stemmer.stem(palavra)]
             vetor[posicao] += 1
     
     return vetor
